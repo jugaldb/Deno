@@ -1,4 +1,5 @@
 import { Product } from "../types.ts";
+import {v4} from 'https://deno.land/std/uuid/mod.ts'
 
 let products: Product[] = [
   {
@@ -49,17 +50,62 @@ const getProduct = (
 
 ///@desc    Add one products
 ///@route   Post /api/v1/products
-const addProduct = ({ response }: { response: any }) => {
+const addProduct = async({request, response }: { request:any,response: any }) => {
+
+    const body= await  request.body()
+
+    if(!request.hasBody){
+      response.status=404,
+      response.body = {
+        success:false,
+        msg:'No data'
+      }
+    }
+    const product:Product = body.value
+    product.id = v4.generate()
+
+    products.push(product)
+    response.status = 201 ,
+    response.body ={
+      success:true,
+      data :product
+    }
+
 };
 
-///@desc    uppdate one products
+///@desc    update one products
 ///@route   PUT /api/v1/products/:id
-const updateProduct = ({ response }: { response: any }) => {
+const updateProduct = async({ params,request,response }: {params:{id:string},request:any, response: any }) => {
+  const product:Product|undefined =  products.find(p=> p.id ===params.id)
+
+  if(product){
+    const body = await request.body()
+    const updateData:{name?:string,description?:string,price?:number} = body.value
+
+    products = products.map(p=>p.id===params.id ? {...p,...updateData}:p)
+
+    response.status = 200,
+    response.body = {
+      success:true,
+      data : products
+    }
+  }
+  else{
+      response.status = 404
+      response.body ={
+          success :false,
+      }
+  }
 };
 
 ///@desc    delete one products
 ///@route   DEL /api/v1/products/:id
-const deleteProduct = ({ response }: { response: any }) => {
+const deleteProduct = ({ params,response }: {params:{id:string}, response: any }) => {
+  products = products.filter(p=>p.id!==params.id)
+  response.body = {
+    success:true,
+    msg:'Deleted'
+  }
 };
 
 export { getProducts, getProduct, addProduct, updateProduct, deleteProduct };
